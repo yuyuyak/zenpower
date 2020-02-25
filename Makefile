@@ -1,7 +1,8 @@
 VERSION         := 0.1.9
 #TARGET          := $(shell readlink /usr/src/linux)
+KERNEL_DIR		:= $(shell readlink /usr/src/linux)
 TARGET			:= $(shell readlink /usr/src/linux|cut -d'-' --complement -s -f1)
-DKMS_ROOT_PATH  := /usr/src/zenpower-$(VERSION)
+MY_DKMS_ROOT_PATH  := /usr/src/$(KERNEL_DIR)/drivers_out-of-tree/zenpower-$(VERSION)
 
 KERNEL_MODULES	:= /lib/modules/$(TARGET)
 
@@ -20,7 +21,7 @@ endif
 obj-m	:= $(patsubst %,%.o,zenpower)
 obj-ko	:= $(patsubst %,%.ko,zenpower)
 
-.PHONY: all modules clean dkms-install dkms-install-swapped dkms-uninstall
+.PHONY: all modules clean dkms-install uber-install dkms-install-swapped dkms-uninstall
 
 all: modules
 
@@ -43,6 +44,20 @@ dkms-install:
 	dkms add zenpower/$(VERSION)
 	dkms build zenpower/$(VERSION)
 	dkms install zenpower/$(VERSION)
+
+uber-install:
+	mkdir $(MY_DKMS_ROOT_PATH)
+	cp $(CURDIR)/dkms.conf $(MY_DKMS_ROOT_PATH)
+	cp $(CURDIR)/Makefile $(MY_DKMS_ROOT_PATH)
+	cp $(CURDIR)/zenpower.c $(MY_DKMS_ROOT_PATH)
+
+	sed -e "s/@CFLGS@/${MCFLAGS}/" \
+	    -e "s/@VERSION@/$(VERSION)/" \
+	    -i $(MY_DKMS_ROOT_PATH)/dkms.conf
+
+	dkms add zenpower/$(VERSION) -k $(TARGET)
+	dkms build zenpower/$(VERSION) -k $(TARGET)
+	dkms install zenpower/$(VERSION) -k $(TARGET)
 
 dkms-uninstall:
 	dkms remove zenpower/$(VERSION) --all

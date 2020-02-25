@@ -1,5 +1,6 @@
 VERSION         := 0.1.9
-TARGET          := $(shell readlink /usr/src/linux)
+#TARGET          := $(shell readlink /usr/src/linux)
+TARGET			:= $(shell readlink /usr/src/linux|cut -d'-' --complement -s -f1)
 DKMS_ROOT_PATH  := /usr/src/zenpower-$(VERSION)
 
 KERNEL_MODULES	:= /lib/modules/$(TARGET)
